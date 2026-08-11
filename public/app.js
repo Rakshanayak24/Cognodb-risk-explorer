@@ -2,9 +2,10 @@
 // Vanilla JS SPA — no build step, no framework. Talks to the /api routes
 // defined in server/routes/api.js.
 
+const API_BASE = 'https://cognodb-risk-explorer.onrender.com';
+
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-const API_BASE = 'https://cognodb-risk-explorer.onrender.com';
 
 const state = {
   currentPackage: null,
@@ -16,7 +17,7 @@ const state = {
 async function checkHealth() {
   const indicator = $('#conn-indicator');
   try {
-    const res = await fetch('/api/health');
+    const res = await fetch(`${API_BASE}/api/health`);
     const body = await res.json();
     if (body.ok) {
       indicator.className = 'conn-indicator ok';
@@ -48,7 +49,7 @@ function hideDbError() {
 // ---------------------------------------------------------------------
 async function loadStats() {
   try {
-    const res = await fetch('/api/stats');
+    const res = await fetch(`${API_BASE}/api/stats`);
     if (!res.ok) throw new Error('stats unavailable');
     const stats = await res.json();
     $('[data-stat="packages"]').textContent = stats.packages ?? '—';
@@ -63,7 +64,7 @@ async function loadStats() {
 async function loadSamples() {
   const row = $('#samples-row');
   try {
-    const res = await fetch('/api/samples');
+    const res = await fetch(`${API_BASE}/api/samples`);
     if (!res.ok) throw new Error('samples unavailable');
     const samples = await res.json();
     if (samples.length === 0) {
@@ -95,7 +96,7 @@ $('#search-form').addEventListener('submit', async (e) => {
   // If it's an exact-ish match, just load it directly; otherwise take the
   // first search result. Keeps the flow to one click for the common case.
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`);
+    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(term)}`);
     if (!res.ok) throw new Error('search failed');
     const results = await res.json();
     if (results.length === 0) {
@@ -129,7 +130,7 @@ async function loadPackage(name) {
   setActiveTab('tree');
 
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(name)}`);
+    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(name)}`);
     const results = await res.json();
     const meta = results.find((r) => r.name === name) || results[0];
     if (meta) {
@@ -170,7 +171,7 @@ async function loadTree(name) {
   svg.innerHTML = '';
 
   try {
-    const res = await fetch(`/api/package/${encodeURIComponent(name)}/tree`);
+    const res = await fetch(`${API_BASE}/api/package/${encodeURIComponent(name)}/tree`);
     if (!res.ok) throw new Error((await res.json()).message);
     const rows = await res.json();
     loading.hidden = true;
@@ -179,7 +180,7 @@ async function loadTree(name) {
     // can flag nodes on the schematic itself.
     let vulnPackages = new Set();
     try {
-      const vres = await fetch(`/api/package/${encodeURIComponent(name)}/vulnerabilities`);
+      const vres = await fetch(`${API_BASE}/api/package/${encodeURIComponent(name)}/vulnerabilities`);
       if (vres.ok) {
         const vrows = await vres.json();
         vulnPackages = new Set(vrows.map((r) => r.packageName));
@@ -333,7 +334,7 @@ async function loadVulns(name) {
   tbody.innerHTML = '';
 
   try {
-    const res = await fetch(`/api/package/${encodeURIComponent(name)}/vulnerabilities`);
+    const res = await fetch(`${API_BASE}/api/package/${encodeURIComponent(name)}/vulnerabilities`);
     if (!res.ok) throw new Error((await res.json()).message);
     const rows = await res.json();
     loading.hidden = true;
@@ -399,7 +400,7 @@ async function loadMaintainers(name) {
   content.innerHTML = '';
 
   try {
-    const res = await fetch(`/api/package/${encodeURIComponent(name)}/maintainers`);
+    const res = await fetch(`${API_BASE}/api/package/${encodeURIComponent(name)}/maintainers`);
     if (!res.ok) throw new Error((await res.json()).message);
     const data = await res.json();
     loading.hidden = true;
@@ -455,7 +456,7 @@ async function loadLicenseConflicts(name) {
   content.innerHTML = '';
 
   try {
-    const res = await fetch(`/api/package/${encodeURIComponent(name)}/license-conflicts`);
+    const res = await fetch(`${API_BASE}/api/package/${encodeURIComponent(name)}/license-conflicts`);
     if (!res.ok) throw new Error((await res.json()).message);
     const rows = await res.json();
     loading.hidden = true;
@@ -492,7 +493,7 @@ $('#path-form').addEventListener('submit', async (e) => {
 
   resultEl.innerHTML = '<p class="loading-row">searching…</p>';
   try {
-    const res = await fetch(`/api/path?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    const res = await fetch(`${API_BASE}/api/path?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
     if (!res.ok) throw new Error((await res.json()).message);
     const data = await res.json();
     if (!data.chain) {
