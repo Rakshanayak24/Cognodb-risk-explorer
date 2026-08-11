@@ -4,6 +4,7 @@
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const API_BASE = 'https://cognodb-risk-explorer.onrender.com';
 
 const state = {
   currentPackage: null,
