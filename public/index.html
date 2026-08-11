@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DepGraph — Dependency Risk Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+<div class="grid-backdrop" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="8" cy="8" r="3.2" stroke="var(--accent-mint)" stroke-width="1.6"/>
+      <circle cx="24" cy="8" r="3.2" stroke="var(--accent-blue)" stroke-width="1.6"/>
+      <circle cx="16" cy="24" r="3.2" stroke="var(--accent-amber)" stroke-width="1.6"/>
+      <path d="M10.8 9.6L14 21.5M21.2 9.6L18 21.5M11.2 8H20.8" stroke="var(--ink-dim)" stroke-width="1.2"/>
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">DepGraph</span>
+      <span class="brand-tag">dependency risk explorer · built on CognoDB</span>
+    </div>
+  </div>
+
+  <form id="search-form" class="search-form" autocomplete="off">
+    <input id="search-input" type="text" placeholder="Search a package (e.g. express, lodash, knex)…" aria-label="Search packages" />
+    <button type="submit">Trace</button>
+  </form>
+
+  <div id="conn-indicator" class="conn-indicator" title="Database connection status">
+    <span class="conn-dot"></span>
+    <span class="conn-label">checking connection…</span>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- EMPTY / LANDING STATE -->
+  <section id="landing" class="landing">
+    <div class="landing-copy">
+      <p class="eyebrow">/// why a graph, not a table</p>
+      <h1>Every dependency is a relationship.<br/>Trace it like one.</h1>
+      <p class="lede">
+        DepGraph traces how a vulnerability, a copyleft license, or a single
+        overworked maintainer travels through a package's entire dependency
+        tree — questions that are one Cypher traversal here, and a stack of
+        brittle recursive joins in a relational schema.
+      </p>
+    </div>
+
+    <div id="stats-row" class="stats-row" aria-live="polite">
+      <div class="stat-card"><span class="stat-value" data-stat="packages">—</span><span class="stat-label">packages</span></div>
+      <div class="stat-card"><span class="stat-value" data-stat="edges">—</span><span class="stat-label">DEPENDS_ON edges</span></div>
+      <div class="stat-card"><span class="stat-value" data-stat="maintainers">—</span><span class="stat-label">maintainers</span></div>
+      <div class="stat-card"><span class="stat-value" data-stat="vulnerabilities">—</span><span class="stat-label">tracked CVEs</span></div>
+    </div>
+
+    <div class="samples-block">
+      <p class="samples-label">Try tracing one of these:</p>
+      <div id="samples-row" class="samples-row"><span class="hint-loading">loading samples…</span></div>
+    </div>
+  </section>
+
+  <!-- ERROR / DB UNREACHABLE STATE -->
+  <section id="db-error" class="db-error" hidden>
+    <p class="eyebrow eyebrow-red">/// connection lost</p>
+    <h2>Can't reach the CognoDB instance.</h2>
+    <p id="db-error-detail" class="db-error-detail">—</p>
+    <p class="db-error-hint">
+      Check that <code>COGNODB_URI</code>, <code>COGNODB_USER</code> and <code>COGNODB_PASSWORD</code>
+      are set correctly, and that your free-tier instance is running at
+      <a href="https://console.cognodb.com" target="_blank" rel="noopener">console.cognodb.com</a>.
+    </p>
+    <button id="retry-connection" class="btn-secondary">Retry connection</button>
+  </section>
+
+  <!-- PACKAGE DETAIL STATE -->
+  <section id="package-view" class="package-view" hidden>
+
+    <div class="package-header">
+      <div>
+        <h2 id="pkg-name">—</h2>
+        <p id="pkg-meta" class="pkg-meta">—</p>
+        <p id="pkg-desc" class="pkg-desc">—</p>
+      </div>
+      <div id="pkg-badges" class="pkg-badges"></div>
+    </div>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tree" role="tab">Dependency Tree</button>
+      <button class="tab-btn" data-tab="vulns" role="tab">Vulnerability Exposure</button>
+      <button class="tab-btn" data-tab="maintainers" role="tab">Maintainer Risk</button>
+      <button class="tab-btn" data-tab="license" role="tab">License Conflicts</button>
+      <button class="tab-btn" data-tab="path" role="tab">Path Finder</button>
+    </nav>
+
+    <div class="tab-panel active" id="tab-tree">
+      <p class="panel-note">
+        Multi-hop traversal — <code>(:Package)-[:DEPENDS_ON*1..5]-&gt;(:Package)</code>.
+        Columns are traversal depth; every trace is one parameterised Cypher query.
+      </p>
+      <div id="tree-loading" class="loading-row" hidden>tracing dependency graph…</div>
+      <div id="tree-empty" class="empty-row" hidden>No dependencies found — this package is a leaf.</div>
+      <div class="schematic-wrap">
+        <svg id="tree-svg" class="schematic-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-vulns">
+      <p class="panel-note">
+        Transitive vulnerability exposure — every CVE reachable anywhere in the
+        dependency tree, with the shortest hop-depth at which it enters.
+        <strong>All CVE records in this demo are synthetic</strong> (prefixed
+        <code>DEMO-CVE-</code>) and do not correspond to real published vulnerabilities.
+      </p>
+      <div id="vulns-loading" class="loading-row" hidden>scanning transitive dependencies…</div>
+      <div id="vulns-empty" class="empty-row" hidden>No known vulnerabilities anywhere in this dependency tree. Clean bill of health.</div>
+      <table class="data-table" id="vulns-table" hidden>
+        <thead><tr><th>Severity</th><th>CVE</th><th>Introduced by</th><th>Depth</th><th>Fixed in</th><th>Description</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="tab-maintainers">
+      <p class="panel-note">
+        Bus-factor risk — a 2-hop <code>(:Package)&lt;-[:MAINTAINS]-(:Maintainer)-[:MAINTAINS]-&gt;(:Package)</code>
+        pattern. A maintainer who publishes many of your dependencies is a
+        single point of failure your relational schema wouldn't surface without a self-join.
+      </p>
+      <div id="maintainers-loading" class="loading-row" hidden>mapping maintainer overlap…</div>
+      <div id="maintainers-content"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-license">
+      <p class="panel-note">
+        Flags transitive dependencies under a copyleft license (GPL-3.0 / AGPL-3.0 / LGPL-3.0)
+        reachable from this package — the kind of obligation that can quietly enter a codebase five hops deep.
+      </p>
+      <div id="license-loading" class="loading-row" hidden>checking license chain…</div>
+      <div id="license-empty" class="empty-row" hidden>No copyleft dependencies found anywhere in this tree.</div>
+      <div id="license-content"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-path">
+      <p class="panel-note">Find the shortest dependency path between this package and any other.</p>
+      <form id="path-form" class="path-form" autocomplete="off">
+        <span class="path-from" id="path-from-label">—</span>
+        <span class="path-arrow">depends on… →</span>
+        <input id="path-to-input" type="text" placeholder="target package name" />
+        <button type="submit">Find path</button>
+      </form>
+      <div id="path-result" class="path-result"></div>
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>DepGraph · a CognoDB-backed graph database demo</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

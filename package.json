@@ -1,0 +1,22 @@
+{
+  "name": "depgraph-risk-explorer",
+  "version": "1.0.0",
+  "description": "Open-source dependency risk explorer built on CognoDB (a graph database) — traces transitive vulnerability exposure, license conflicts, and maintainer bus-factor risk through package dependency trees.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "generate-data": "node scripts/generate-data.js",
+    "seed": "node scripts/generate-data.js && node scripts/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "neo4j-driver": "^5.24.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
