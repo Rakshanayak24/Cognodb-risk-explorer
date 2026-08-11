@@ -240,5 +240,4 @@ depgraph-risk-explorer/
 
 ## 9. Demo
 
-- **Hosted demo:** 
-- **Screen recording:**
+- **Hosted demo:**https://cognodb-risk-explorer-kaul.vercel.app/
