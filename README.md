@@ -233,11 +233,12 @@ depgraph-risk-explorer/
 
 ## 8. Screenshots
 
-_Add screenshots of the running app here before submitting — landing page,
-a traced dependency schematic, the vulnerability tab, and the maintainer-risk
-tab are the most representative four._
+<img width="1869" height="2067" alt="image" src="https://github.com/user-attachments/assets/fbc11cbb-04ee-4976-a83c-75ce1f5047c2" />
+<img width="1780" height="1797" alt="image" src="https://github.com/user-attachments/assets/3c84012e-77b4-4790-ad2f-03aa68a45670" />
+<img width="1791" height="1703" alt="image" src="https://github.com/user-attachments/assets/d3794a89-2475-4ea7-96f8-1284da687d2c" />
+
 
 ## 9. Demo
 
-- **Hosted demo:** _add your deployed URL here_
-- **Screen recording:** _add your recording link here_
+- **Hosted demo:** 
+- **Screen recording:**
